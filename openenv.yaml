@@ -1,0 +1,57 @@
+name: support_ticket_env
+version: "1.0.0"
+description: >
+  A real-world customer support ticket triage environment.
+  An AI agent acts as a support executive: it classifies incoming tickets,
+  selects the correct action (reply / escalate / close), and resolves
+  multi-ticket queues efficiently.
+author: OpenEnv Hackathon Entry
+tags:
+  - openenv
+  - customer-support
+  - triage
+  - nlp
+  - real-world
+tasks:
+  - id: 1
+    name: Classification
+    difficulty: easy
+    description: >
+      Given a customer ticket, predict the correct category
+      (billing | technical | account | general | refund).
+    score_range: [0.0, 1.0]
+  - id: 2
+    name: Action Selection
+    difficulty: medium
+    description: >
+      First classify the ticket, then choose the best action:
+      reply, escalate, or close.
+    score_range: [0.0, 1.0]
+  - id: 3
+    name: Full Resolution
+    difficulty: hard
+    description: >
+      Handle a queue of 3 tickets. For each ticket classify it,
+      choose the right action, and (if replying) craft a relevant reply.
+      Bonus for fewer steps.
+    score_range: [0.0, 1.0]
+action_space:
+  type: SupportAction
+  fields:
+    action_type: "classify | reply | escalate | close"
+    category: "billing | technical | account | general | refund (required for classify)"
+    reply_text: "string (required for reply)"
+    reason: "optional justification"
+observation_space:
+  type: SupportObservation
+  fields:
+    ticket_id: string
+    ticket_text: string
+    task_id: integer
+    current_category: "string | null"
+    resolved: boolean
+    step_count: integer
+    feedback: string
+    score: float
+docker_image: "support-ticket-env:latest"
+hf_space: "openenv/support-ticket-env"
