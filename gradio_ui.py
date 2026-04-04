@@ -148,7 +148,7 @@ An **OpenEnv** environment for training AI agents to handle customer support tic
 **Tasks:** 1 = Classify · 2 = Classify + Action · 3 = Full Queue Resolution
 """
 
-with gr.Blocks(title="Support Ticket Env", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="Support Ticket Env") as demo:
     gr.Markdown(DESCRIPTION)
 
     with gr.Row():
@@ -165,9 +165,10 @@ with gr.Blocks(title="Support Ticket Env", theme=gr.themes.Soft()) as demo:
                 value="classify", label="Action Type",
             )
             category_dd = gr.Dropdown(
-                ["billing", "technical", "account", "general", "refund"],
+                choices=["billing", "technical", "account", "general", "refund"],
                 label="Category (for classify)",
                 value=None,
+                allow_custom_value=False,
             )
             reply_box  = gr.Textbox(label="Reply Text (for reply)", lines=3)
             reason_box = gr.Textbox(label="Reason (optional)")
