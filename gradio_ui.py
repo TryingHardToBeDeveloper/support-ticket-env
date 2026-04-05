@@ -170,6 +170,19 @@ body, .gradio-container {
     margin-bottom: 12px;
 }
 
+/* Section boxes */
+.gr-column {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+}
+
+.gr-row {
+    gap: 16px !important;
+    padding: 20px 40px !important;
+}
+
 .panel-title {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
