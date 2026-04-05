@@ -21,6 +21,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-asyncio", "httpx"]
 
+[project.scripts]
+server = "support_ticket_env.server.app:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["support_ticket_env*"]
