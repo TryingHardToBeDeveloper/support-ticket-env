@@ -5,7 +5,7 @@ description: >
   An AI agent acts as a support executive: it classifies incoming tickets,
   selects the correct action (reply / escalate / close), and resolves
   multi-ticket queues efficiently.
-author: OpenEnv Hackathon Entry
+author: AlgoCore
 tags:
   - openenv
   - customer-support
@@ -54,4 +54,4 @@ observation_space:
     feedback: string
     score: float
 docker_image: "support-ticket-env:latest"
-hf_space: "openenv/support-ticket-env"
+hf_space: "AlgoCore/support-ticket-env"
