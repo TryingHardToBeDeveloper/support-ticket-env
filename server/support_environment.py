@@ -48,6 +48,16 @@ class SupportTicketEnvironment(Environment):
         self._queue: list[dict] = []
         self._tickets_resolved: int = 0
         self._tickets_total: int = 1
+	
+    def get_metadata(self):
+        from openenv.core.env_server.types import EnvironmentMetadata
+        return EnvironmentMetadata(
+            name="support_ticket_env",
+            description="A real-world customer support ticket triage environment where an AI agent classifies tickets, selects actions, and resolves queues.",
+            version="1.0.0",
+            author="AlgoCore",
+            documentation_url="https://github.com/TryingHardToBeDeveloper/support-ticket-env",
+        )
 
     # ──────────────────────── reset ────────────────────────────
 
