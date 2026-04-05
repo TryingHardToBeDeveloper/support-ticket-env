@@ -164,11 +164,10 @@ with gr.Blocks(title="Support Ticket Env") as demo:
                 ["classify", "reply", "escalate", "close"],
                 value="classify", label="Action Type",
             )
-            category_dd = gr.Dropdown(
-                choices=["billing", "technical", "account", "general", "refund"],
-                label="Category (for classify)",
+            category_dd = gr.Radio(
+    		choices=["billing", "technical", "account", "general", "refund"],
+    		label="Category (for classify)",
                 value=None,
-                allow_custom_value=False,
             )
             reply_box  = gr.Textbox(label="Reply Text (for reply)", lines=3)
             reason_box = gr.Textbox(label="Reason (optional)")
