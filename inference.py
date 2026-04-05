@@ -11,8 +11,6 @@ import re
 from typing import List, Optional
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-STUB = os.path.join(ROOT, "openenv_stub")
-sys.path.insert(0, STUB)
 sys.path.insert(0, ROOT)
 
 from openai import OpenAI
