@@ -20,7 +20,7 @@ from openenv.core.env_server.types import Action, Observation, State
 # ═══════════════════════════════════════════════════════════════
 
 if _USE_PYDANTIC:
-    class SupportAction(Action, BaseModel):  # type: ignore[misc]
+    class SupportAction(BaseModel):  # type: ignore[misc]
         model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
         metadata: Dict[str, Any] = {}
         action_type: Literal["classify", "reply", "escalate", "close"]
@@ -56,7 +56,7 @@ else:
 # ═══════════════════════════════════════════════════════════════
 
 if _USE_PYDANTIC:
-    class SupportObservation(Observation, BaseModel):  # type: ignore[misc]
+    class SupportObservation(BaseModel):  # type: ignore[misc]
         model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
         done: bool = False
         reward: Optional[float] = None
@@ -90,7 +90,7 @@ else:
 # ═══════════════════════════════════════════════════════════════
 
 if _USE_PYDANTIC:
-    class SupportState(State, BaseModel):  # type: ignore[misc]
+    class SupportState(BaseModel):  # type: ignore[misc]
         model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
         episode_id: Optional[str] = None
         step_count: int = 0
