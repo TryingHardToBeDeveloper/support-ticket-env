@@ -80,7 +80,69 @@ def parse_response(text: str) -> dict:
         raise
 
 
+CATEGORY_KEYWORDS = {
+    "billing": ["charge", "invoice", "payment", "bill", "refund", "subscription", "price", "cost", "fee", "money"],
+    "technical": ["error", "bug", "crash", "not working", "broken", "issue", "problem", "fail", "500", "api"],
+    "account": ["login", "password", "account", "access", "sign in", "email", "username", "cancel"],
+    "refund": ["refund", "return", "money back", "reimburse", "cancel order"],
+    "general": ["hours", "contact", "phone", "help", "question", "info", "support"],
+}
+
+def rule_based_action(obs) -> dict:
+    """Simple deterministic fallback agent — no API needed."""
+    text = obs.ticket_text.lower()
+    # Classify by keywords
+    if not obs.current_category:
+        best_cat = "general"
+        best_score = 0
+        for cat, keywords in CATEGORY_KEYWORDS.items():
+            score = sum(1 for kw in keywords if kw in text)
+            if score > best_score:
+                best_score = score
+                best_cat = cat
+        return {"action_type": "classify", "category": best_cat}
+    # After classification — choose action based on category
+    cat = obs.current_category
+    if cat == "technical":
+        return {"action_type": "escalate", "reason": "Technical issue requires engineering team"}
+    elif cat == "general":
+        return {"action_type": "close", "reason": "General inquiry resolved"}
+    else:
+        return {
+            "action_type": "reply",
+            "reply_text": f"Thank you for contacting us about your {cat} issue. We are looking into it and will resolve it shortly."
+        }
+
+
 def get_model_action(client: OpenAI, obs, history: List[str]) -> dict:
+    """Try LLM first, fall back to rule-based if API unavailable."""
+    if not API_KEY:
+        return rule_based_action(obs)
+    user_prompt = json.dumps({
+        "ticket_id": obs.ticket_id,
+        "ticket_text": obs.ticket_text,
+        "task_id": obs.task_id,
+        "current_category": obs.current_category,
+        "step_count": obs.step_count,
+        "feedback": obs.feedback,
+    })
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt},
+    ]
+    try:
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=messages,
+            temperature=0.0,
+            max_tokens=256,
+            stream=False,
+        )
+        text = (completion.choices[0].message.content or "").strip()
+        return parse_response(text)
+    except Exception as exc:
+        print(f"[DEBUG] Model request failed, using fallback: {exc}", flush=True)
+        return rule_based_action(obs)
     user_prompt = json.dumps({
         "ticket_id": obs.ticket_id,
         "ticket_text": obs.ticket_text,
