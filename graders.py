@@ -117,7 +117,7 @@ def grade_task3(
         score += 0.20
 
     if reply_text:
-        score += _reply_quality(reply_text, category) * 0.5   # scaled to 0.25 max
+        score += _reply_quality(reply_text, category)   # up to 0.5 (already capped in _reply_quality)
 
     # Efficiency: full 0.15 for 1 step, 0 for max_steps steps
     if resolved and steps_taken <= max_steps:

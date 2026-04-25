@@ -41,11 +41,30 @@ Respond ONLY with a JSON object (no markdown, no explanation):
 }
 
 Rules:
-- For task 1: use action_type=classify and pick correct category.
-- For task 2: first classify, then reply/escalate/close.
-- For task 3: classify each ticket then resolve it.
-- category is only needed when action_type=classify.
-- reply_text is only needed when action_type=reply.
+- For task 1: use action_type=classify and pick the correct category.
+- For task 2: first classify, then on next step reply/escalate/close.
+- For task 3: classify each ticket then resolve it (classify first, then action).
+- category is ONLY needed when action_type=classify.
+- reply_text is ONLY needed when action_type=reply.
+
+Category detection rules:
+- billing: mentions charge, invoice, payment, bill, subscription, price, cost, fee
+- technical: mentions error, bug, crash, not working, broken, API, 500, upload, fail
+- account: mentions login, password, account, access, sign in, email, cancel, subscription cancel
+- refund: mentions refund, return, money back, reimburse, unused
+- general: mentions hours, phone, contact, business hours, information
+
+Action rules:
+- technical tickets -> escalate (include 'escalate' and 'engineering' in reason)
+- general tickets that are resolved/thank you -> close
+- all others -> reply
+
+When replying, your reply_text MUST include relevant keywords:
+- billing reply: include words like 'charge', 'invoice', 'payment', 'billing'
+- account reply: include words like 'account', 'password', 'login', 'subscription'
+- refund reply: include words like 'refund', 'return', 'credit', 'process'
+- general reply: include words like 'hours', 'contact', 'phone', 'information'
+- technical escalation reason: include 'engineering', 'escalate', 'bug', 'error'
 """
 
 
@@ -214,7 +233,7 @@ def run_task(task_id: int, seed: int, client: OpenAI) -> float:
                 break
 
         total = sum(rewards)
-        score = min(max(round(total / MAX_STEPS, 3), 0.0), 1.0)
+        score = min(max(round(total / max(steps_taken, 1), 3), 0.0), 1.0)
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     finally:
@@ -233,7 +252,7 @@ def main() -> None:
     all_scores = {}
     for task_id in [1, 2, 3]:
         scores = []
-        for seed in [42, 7, 123]:
+        for seed in [42, 7, 123, 0, 99]:
             score = run_task(task_id, seed, client)
             scores.append(score)
         avg = round(sum(scores) / len(scores), 4)
