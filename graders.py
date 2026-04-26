@@ -38,14 +38,22 @@ _KEYWORD_REWARDS: Dict[str, list[str]] = {
 
 
 def _reply_quality(reply_text: str, category: str) -> float:
-    """Return 0.0–0.5 based on how relevant the reply text is."""
+    """Return 0.0–0.25 based on how relevant the reply text is.
+
+    Matching is case-insensitive and punctuation-stripped so that
+    replies like 'Resolved.' and 'resolved' score identically.
+    Each keyword hit = 0.05, capped at 0.25 (5 hits max).
+    Total grade_task3 weights: 0.20 + 0.40 + 0.25 + 0.15 = 1.00
+    """
     if not reply_text:
         return 0.0
-    text_lower = reply_text.lower()
+    # Strip punctuation and lowercase for robust matching
+    import re
+    cleaned = re.sub(r'[^\w\s]', ' ', reply_text.lower())
     keywords = _KEYWORD_REWARDS.get(category, [])
-    hits = sum(1 for kw in keywords if kw in text_lower)
-    # cap at 0.5 (the other 0.5 comes from action correctness)
-    return min(0.5, hits * 0.1)
+    hits = sum(1 for kw in keywords if kw in cleaned)
+    # cap at 0.25 — reply quality component of grade_task3
+    return min(0.25, hits * 0.05)
 
 
 # ─────────────────────────── Task 1 ────────────────────────────
@@ -103,7 +111,7 @@ def grade_task3(
     Breakdown:
       0.20  – classification correct
       0.40  – action correct  (0.20 if partial)
-      0.25  – reply quality   (NLP keyword overlap)
+      0.25  – reply quality   (NLP keyword overlap, case-insensitive, punctuation-stripped)
       0.15  – efficiency bonus (fewer steps → higher bonus)
     """
     score = 0.0
