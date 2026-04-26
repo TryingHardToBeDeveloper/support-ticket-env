@@ -37,23 +37,39 @@ _KEYWORD_REWARDS: Dict[str, list[str]] = {
 }
 
 
-def _reply_quality(reply_text: str, category: str) -> float:
+def _reply_quality(
+    reply_text: str,
+    category: str,
+    resolution_hint: str = "",
+) -> float:
     """Return 0.0–0.25 based on how relevant the reply text is.
 
-    Matching is case-insensitive and punctuation-stripped so that
-    replies like 'Resolved.' and 'resolved' score identically.
-    Each keyword hit = 0.05, capped at 0.25 (5 hits max).
+    Two-tier keyword scoring (both case-insensitive, punctuation-stripped):
+      - Category keyword hit  → 0.03 each  (broad topical relevance)
+      - Hint keyword hit      → 0.05 each  (specific resolution relevance)
+    Total capped at 0.25 — intentionally rewards specificity over vagueness.
+
     Total grade_task3 weights: 0.20 + 0.40 + 0.25 + 0.15 = 1.00
     """
     if not reply_text:
         return 0.0
-    # Strip punctuation and lowercase for robust matching
+
     import re
     cleaned = re.sub(r'[^\w\s]', ' ', reply_text.lower())
-    keywords = _KEYWORD_REWARDS.get(category, [])
-    hits = sum(1 for kw in keywords if kw in cleaned)
-    # cap at 0.25 — reply quality component of grade_task3
-    return min(0.25, hits * 0.05)
+
+    # Broad category keywords — 0.03 each
+    category_keywords = _KEYWORD_REWARDS.get(category, [])
+    category_score = sum(0.03 for kw in category_keywords if kw in cleaned)
+
+    # Specific hint keywords — 0.05 each (extracted from resolution_hint)
+    hint_score = 0.0
+    if resolution_hint:
+        hint_words = set(re.sub(r'[^\w\s]', ' ', resolution_hint.lower()).split())
+        # filter out short/common stop words
+        hint_words = {w for w in hint_words if len(w) > 3}
+        hint_score = sum(0.05 for w in hint_words if w in cleaned)
+
+    return round(min(0.25, category_score + hint_score), 4)
 
 
 # ─────────────────────────── Task 1 ────────────────────────────
@@ -104,6 +120,7 @@ def grade_task3(
     resolved: bool,
     steps_taken: int,
     max_steps: int = 5,
+    resolution_hint: str = "",
 ) -> float:
     """
     Multi-step resolution reward with partial progress.
@@ -111,7 +128,7 @@ def grade_task3(
     Breakdown:
       0.20  – classification correct
       0.40  – action correct  (0.20 if partial)
-      0.25  – reply quality   (NLP keyword overlap, case-insensitive, punctuation-stripped)
+      0.25  – reply quality   (two-tier: category keywords @0.03, hint keywords @0.05)
       0.15  – efficiency bonus (fewer steps → higher bonus)
     """
     score = 0.0
@@ -125,7 +142,7 @@ def grade_task3(
         score += 0.20
 
     if reply_text:
-        score += _reply_quality(reply_text, category)   # up to 0.5 (already capped in _reply_quality)
+        score += _reply_quality(reply_text, category, resolution_hint)
 
     # Efficiency: full 0.15 for 1 step, 0 for max_steps steps
     if resolved and steps_taken <= max_steps:

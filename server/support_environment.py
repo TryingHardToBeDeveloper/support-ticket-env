@@ -228,7 +228,8 @@ class SupportTicketEnvironment(Environment):
             action_correct=action_correct,
             action_partial=action_partial,
             reply_text=action.reply_text,
-            category=self._ticket["category"],
+            category=self._ticket["category"],       # ground truth category
+            resolution_hint=self._ticket.get("resolution_hint", ""),  # per-ticket hint keywords
             resolved=True,
             steps_taken=self._step_count,
             max_steps=MAX_STEPS,
