@@ -11,11 +11,13 @@ pinned: false
 
 # Customer Support Ticket Resolution Environment
 
-A real-world [OpenEnv](https://github.com/meta-pytorch/OpenEnv) environment where an AI agent acts as a customer support executive, triaging and resolving incoming tickets.
+> 🏆 **OpenEnv x Scalar Hackathon** — Theme **#3.1 Professional Tasks** | Sub-theme: **Scaler AI Labs — Multi-App RL Environment for Enterprise Workflows**
+
+A real-world [OpenEnv](https://github.com/meta-pytorch/OpenEnv) environment where an AI agent acts as a customer support executive, triaging and resolving incoming tickets — simulating complex enterprise workflows, business rule nuances, and multi-step decision making under partial observability.
 
 ## Overview
 
-Customer support triage is one of the most common real-world tasks for AI agents. Every company handles thousands of tickets daily. Getting the classification wrong routes the ticket to the wrong team. Choosing the wrong action has direct business impact. This environment trains agents to handle exactly this challenge.
+Customer support triage is one of the most common real-world tasks for AI agents in enterprise settings. Every company handles thousands of tickets daily. Getting the classification wrong routes the ticket to the wrong team. Choosing the wrong action has direct business impact. This environment trains agents to handle exactly this challenge — with real tool interaction, dynamic state, and a multi-step reward structure that resists shortcuts.
 
 ## Quick Start
 
@@ -118,9 +120,9 @@ python run_tests.py
 
 > 🎮 **Playground UI** available at `http://localhost:7860/playground` once the server is running.
 
-## Training Results (GRPO)
+## 📈 Training Results (GRPO) — Evidence of Improvement
 
-Fine-tuned `Qwen2.5-0.5B-Instruct` with GRPO via HuggingFace TRL over 700+ steps:
+Fine-tuned `Qwen2.5-0.5B-Instruct` using **2-stage training** (SFT pre-training → GRPO) via HuggingFace TRL over **700+ steps** on the live environment API:
 
 ![GRPO Training Results](https://raw.githubusercontent.com/TryingHardToBeDeveloper/support-ticket-env/main/grpo_results.png)
 
@@ -141,6 +143,17 @@ Measured with `gpt-4o-mini`, seeds `[42, 7, 123]`:
 | Task 2 - Action Selection | 0.71 |
 | Task 3 - Full Resolution | 0.58 |
 | **Overall** | **0.72** |
+
+## 🎯 Why This Fits Theme 3.1 — Professional Tasks
+
+> *"Real interaction with tools, APIs, or dynamic systems where the model does real hard work instead of exploiting shortcuts"*
+
+- ✅ **Live FastAPI environment** — agent interacts with a real stateful API, not a simulation
+- ✅ **No shortcut exploitation** — reward function penalises loops (-0.05/step over 10), forces genuine reasoning
+- ✅ **Persistent world state** — ticket queue, classification state, and resolution state tracked across steps
+- ✅ **Multi-step causal reasoning** — classify → choose action → craft reply → resolve, all causally linked
+- ✅ **Enterprise workflow complexity** — billing, technical, account, general, refund categories with real business rules
+- ✅ **Scaler AI Labs sub-theme** — demonstrates complex enterprise workflows and business rule nuances in an RL environment
 
 ## Links
 
