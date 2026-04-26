@@ -122,7 +122,7 @@ python run_tests.py
 
 Fine-tuned `Qwen2.5-0.5B-Instruct` with GRPO via HuggingFace TRL over 700+ steps:
 
-![GRPO Training Results](grpo_results.png)
+![GRPO Training Results](https://raw.githubusercontent.com/TryingHardToBeDeveloper/support-ticket-env/main/grpo_results.png)
 
 | Task | Before GRPO | After GRPO | Improvement |
 |------|-------------|------------|-------------|
