@@ -118,6 +118,19 @@ python run_tests.py
 
 > 🎮 **Playground UI** available at `http://localhost:7860/playground` once the server is running.
 
+## Training Results (GRPO)
+
+Fine-tuned `Qwen2.5-0.5B-Instruct` with GRPO via HuggingFace TRL over 700+ steps:
+
+![GRPO Training Results](grpo_results.png)
+
+| Task | Before GRPO | After GRPO | Improvement |
+|------|-------------|------------|-------------|
+| Task 1 - Classification | 0.67 | **1.00** | +49% 🚀 |
+| Task 2 - Action Selection | 0.12 | **0.48** | +300% 🚀 |
+| Task 3 - Full Resolution | 0.08 | **0.23** | +187% 🚀 |
+| **Overall** | **0.29** | **0.57** | **+96% 🚀** |
+
 ## Baseline Scores
 
 Measured with `gpt-4o-mini`, seeds `[42, 7, 123]`:
