@@ -40,6 +40,7 @@ class SupportTicketEnvironment(Environment):
         self._ticket: dict = {}
         self._classified: bool = False
         self._classified_correctly: bool = False  # tracks actual correctness, not just attempt
+        self._task2_cls_score: float = 0.0        # accumulated classification partial credit for Task 2
         self._resolved: bool = False
         self._step_count: int = 0
         self._total_reward: float = 0.0
@@ -76,6 +77,7 @@ class SupportTicketEnvironment(Environment):
         self._total_reward = 0.0
         self._classified = False
         self._classified_correctly = False
+        self._task2_cls_score = 0.0
         self._resolved = False
 
         if self._task_id == 3:
@@ -159,6 +161,7 @@ class SupportTicketEnvironment(Environment):
                 action.category or "", self._ticket["category"]
             )
             self._classified = True
+            self._task2_cls_score = cat_score * 0.3  # store — combined with action score at step 2
             # TODO: store self._classified_correctly here too if grade_task2
             # is ever extended to factor in classification correctness
             return self._make_obs(
@@ -167,19 +170,23 @@ class SupportTicketEnvironment(Environment):
                     f"{'Correct ✅' if cat_score == 1.0 else 'Incorrect ❌'} "
                     "Now choose an action."
                 ),
-                score=cat_score * 0.3,   # partial credit toward max 1.0
+                score=self._task2_cls_score,
             )
 
         # Second step: choose action
-        score = grade_task2(
+        action_score = grade_task2(
             action_type=action.action_type,
             correct_action=self._ticket["correct_action"],
             category=self._ticket["category"],
         )
+        # Scale action score to 0.7 max so classification credit (0.0-0.3) has real room.
+        # Total max = 0.7 (perfect action) + 0.3 (correct classify) = 1.0
+        # Clamp AFTER addition — pre-clamping would silently discard classification credit.
+        score = round(min(1.0, action_score * 0.7 + self._task2_cls_score), 4)
         correct = self._ticket["correct_action"]
-        if score == 1.0:
+        if action_score == 1.0:
             feedback = f"✅ Correct action: '{correct}'."
-        elif score == 0.5:
+        elif action_score == 0.5:
             feedback = (
                 f"⚠️ Partial credit. '{action.action_type}' is defensible "
                 f"but '{correct}' is preferred."
