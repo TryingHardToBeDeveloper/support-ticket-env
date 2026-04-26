@@ -77,36 +77,46 @@ Rewards provide partial progress signals throughout the trajectory:
 
 ```
 support_ticket_env/
-├── __init__.py          # Package exports
-├── models.py            # SupportAction, SupportObservation, SupportState
-├── tickets.py           # Ticket dataset with ground-truth labels
-├── graders.py           # Reward/grader functions for all 3 tasks
-├── client.py            # EnvClient subclass
-├── baseline.py          # Baseline inference script
-├── openenv.yaml         # Environment metadata
-├── Dockerfile           # Container definition
+├── __init__.py               # Package exports
+├── models.py                 # SupportAction, SupportObservation, SupportState
+├── tickets.py                # Ticket dataset with ground-truth labels
+├── graders.py                # Reward/grader functions for all 3 tasks
+├── client.py                 # EnvClient subclass
+├── baseline.py               # Baseline inference script
+├── get_baseline.py           # Fetch & save baseline results
+├── gradio_ui.py              # Interactive Gradio playground UI
+├── make_chart.py             # Plot training reward curves
+├── plot_results.py           # Visualise evaluation results
+├── grpo_results.png          # GRPO training results chart
+├── reward_chart.png          # Reward curve chart
+├── openenv.yaml              # Environment metadata
+├── Dockerfile                # Container definition
+├── train_sft.ipynb           # Step 1: SFT pre-training notebook
+├── train_grpo.ipynb          # Step 2: GRPO fine-tuning notebook
 └── server/
-    ├── app.py           # FastAPI entry point
-    └── support_environment.py  # Environment logic
+    ├── app.py                # FastAPI entry point (+ Gradio UI mounted at /playground)
+    ├── support_environment.py # Environment logic
+    └── requirements.txt      # Server dependencies
 ```
 
 ## Setup
 
 ```bash
 # Install dependencies
-pip install openenv-core fastapi uvicorn pydantic gradio openai
+pip install openenv-core fastapi uvicorn pydantic gradio openai pyyaml
 
 # Run locally
-cd support_ticket_env
-uvicorn server.app:app --host 0.0.0.0 --port 7860
+uvicorn support_ticket_env.server.app:app --host 0.0.0.0 --port 7860
 
-# Docker
+# Or via Docker
 docker build -t support-ticket-env .
 docker run -p 7860:7860 support-ticket-env
 
 # Run tests
 python run_tests.py
 ```
+
+> 🎮 **Playground UI** available at `http://localhost:7860/playground` once the server is running.
 
 ## Baseline Scores
 
