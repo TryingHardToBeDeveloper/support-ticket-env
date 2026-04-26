@@ -1,4 +1,37 @@
-__pycache__/ 
-*.pyc 
-*.pyo 
-token.txt 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environments
+venv/
+.venv/
+env/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Secrets
+token.txt
+*.token
+.env*
+
+# Lock files (not needed for this project)
+uv.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# One-off scripts (not part of environment)
+fix_*.py
+inference.py
+plot_reward_curve.py
+reward_curve.png
