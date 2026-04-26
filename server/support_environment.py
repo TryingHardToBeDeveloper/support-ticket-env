@@ -39,6 +39,7 @@ class SupportTicketEnvironment(Environment):
         self._task_id: int = 1
         self._ticket: dict = {}
         self._classified: bool = False
+        self._classified_correctly: bool = False  # tracks actual correctness, not just attempt
         self._resolved: bool = False
         self._step_count: int = 0
         self._total_reward: float = 0.0
@@ -74,6 +75,7 @@ class SupportTicketEnvironment(Environment):
         self._step_count = 0
         self._total_reward = 0.0
         self._classified = False
+        self._classified_correctly = False
         self._resolved = False
 
         if self._task_id == 3:
@@ -157,6 +159,8 @@ class SupportTicketEnvironment(Environment):
                 action.category or "", self._ticket["category"]
             )
             self._classified = True
+            # TODO: store self._classified_correctly here too if grade_task2
+            # is ever extended to factor in classification correctness
             return self._make_obs(
                 feedback=(
                     f"Classified as '{action.category}'. "
@@ -202,6 +206,7 @@ class SupportTicketEnvironment(Environment):
                 action.category or "", self._ticket["category"]
             )
             self._classified = True
+            self._classified_correctly = (cat_score == 1.0)  # real correctness tracked
             return self._make_obs(
                 feedback=(
                     f"Classified '{self._ticket['id']}' as '{action.category}'. "
@@ -219,7 +224,7 @@ class SupportTicketEnvironment(Environment):
         }
 
         score = grade_task3(
-            classified_correctly=self._classified,
+            classified_correctly=self._classified_correctly,  # real score, not just attempt flag
             action_correct=action_correct,
             action_partial=action_partial,
             reply_text=action.reply_text,
