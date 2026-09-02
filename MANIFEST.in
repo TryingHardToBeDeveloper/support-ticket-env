@@ -1,0 +1,9 @@
+include README.md
+recursive-include client_package/support_ticket_env *.py
+exclude __init__.py client.py models.py tickets.py
+exclude baseline.py fix_metadata.py fix_readme.py get_baseline.py graders.py gradio_ui.py
+exclude inference.py make_chart.py plot_results.py plot_reward_curve.py run_tests.py smoke_train.py
+prune server
+prune tests
+prune openenv_stub
+global-exclude *.py[cod] __pycache__

@@ -18,61 +18,96 @@ Task 3 – Full Resolution (hard)
 """
 
 from __future__ import annotations
-from typing import Dict, Any
 
+import re
 
 # ─────────────────────────── helpers ───────────────────────────
 
-# Pairs of actions that are considered "close enough" for partial credit
+# Pairs of actions that are considered "close enough" for partial credit.
 _PARTIAL_CREDIT_PAIRS = {
     frozenset({"reply", "escalate"}),  # borderline tickets
 }
 
-_KEYWORD_REWARDS: Dict[str, list[str]] = {
-    "billing":   ["refund", "charge", "invoice", "payment", "billing"],
-    "account":   ["password", "login", "account", "cancel", "subscription"],
-    "technical": ["engineering", "escalate", "bug", "crash", "error", "fix"],
-    "refund":    ["refund", "return", "credit", "process"],
-    "general":   ["hours", "contact", "phone", "information", "help"],
+_STOP_WORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "their",
+    "to",
+    "was",
+    "we",
+    "will",
+    "with",
+    "you",
+    "your",
 }
+_CUSTOMER_TONE = {"we", "you", "your", "please", "sorry", "thank", "can"}
 
 
 def _reply_quality(
     reply_text: str,
     category: str,
     resolution_hint: str = "",
+    ticket_text: str = "",
 ) -> float:
-    """Return 0.0–0.25 based on how relevant the reply text is.
+    """Score a customer-facing reply while rejecting keyword stuffing.
 
-    Two-tier keyword scoring (both case-insensitive, punctuation-stripped):
-      - Category keyword hit  → 0.03 each  (broad topical relevance)
-      - Hint keyword hit      → 0.05 each  (specific resolution relevance)
-    Total capped at 0.25 — intentionally rewards specificity over vagueness.
-
-    Total grade_task3 weights: 0.20 + 0.40 + 0.25 + 0.15 = 1.00
+    The per-ticket rubric is server-only. Credit requires adequate length,
+    lexical diversity, ticket/rubric specificity, and customer-facing language.
+    Exact copies of the private rubric are explicitly rejected.
     """
     if not reply_text:
         return 0.0
 
-    import re
-    cleaned = re.sub(r'[^\w\s]', ' ', reply_text.lower())
+    tokens = re.findall(r"[a-z0-9]+", reply_text.lower())
+    if not 8 <= len(tokens) <= 120:
+        return 0.0
+    if len(set(tokens)) / len(tokens) < 0.55:
+        return 0.0
+    if not set(tokens) & _CUSTOMER_TONE:
+        return 0.0
 
-    # Broad category keywords — 0.03 each
-    category_keywords = _KEYWORD_REWARDS.get(category, [])
-    category_score = sum(0.03 for kw in category_keywords if kw in cleaned)
+    reply_terms = {word for word in tokens if len(word) > 3 and word not in _STOP_WORDS}
+    rubric_terms = {
+        word
+        for word in re.findall(r"[a-z0-9]+", resolution_hint.lower())
+        if len(word) > 3 and word not in _STOP_WORDS
+    }
+    ticket_terms = {
+        word
+        for word in re.findall(r"[a-z0-9]+", ticket_text.lower())
+        if len(word) > 3 and word not in _STOP_WORDS
+    }
+    if resolution_hint and " ".join(tokens) == " ".join(
+        re.findall(r"[a-z0-9]+", resolution_hint.lower())
+    ):
+        return 0.0
 
-    # Specific hint keywords — 0.05 each (extracted from resolution_hint)
-    hint_score = 0.0
-    if resolution_hint:
-        hint_words = set(re.sub(r'[^\w\s]', ' ', resolution_hint.lower()).split())
-        # filter out short/common stop words
-        hint_words = {w for w in hint_words if len(w) > 3}
-        hint_score = sum(0.05 for w in hint_words if w in cleaned)
-
-    return round(min(0.25, category_score + hint_score), 4)
+    rubric_coverage = len(reply_terms & rubric_terms) / max(1, min(6, len(rubric_terms)))
+    ticket_coverage = len(reply_terms & ticket_terms) / max(1, min(3, len(ticket_terms)))
+    score = 0.16 * min(1.0, rubric_coverage)
+    score += 0.05 * min(1.0, ticket_coverage)
+    score += 0.04
+    return round(min(0.25, score), 4)
 
 
 # ─────────────────────────── Task 1 ────────────────────────────
+
 
 def grade_task1(
     predicted_category: str,
@@ -83,6 +118,7 @@ def grade_task1(
 
 
 # ─────────────────────────── Task 2 ────────────────────────────
+
 
 def grade_task2(
     action_type: str,
@@ -111,6 +147,7 @@ def grade_task2(
 
 # ─────────────────────────── Task 3 ────────────────────────────
 
+
 def grade_task3(
     classified_correctly: bool,
     action_correct: bool,
@@ -121,15 +158,17 @@ def grade_task3(
     steps_taken: int,
     max_steps: int = 5,
     resolution_hint: str = "",
+    ticket_text: str = "",
+    requires_reply: bool = True,
 ) -> float:
     """
     Multi-step resolution reward with partial progress.
 
     Breakdown:
       0.20  – classification correct
-      0.40  – action correct  (0.20 if partial)
-      0.25  – reply quality   (two-tier: category keywords @0.03, hint keywords @0.05)
-      0.15  – efficiency bonus (fewer steps → higher bonus)
+      0.45  – action correct  (0.20 if partial)
+      0.25  – response quality (private rubric and anti-stuffing checks)
+      0.10  – efficiency bonus (fewer steps → higher bonus)
     """
     score = 0.0
 
@@ -137,22 +176,29 @@ def grade_task3(
         score += 0.20
 
     if action_correct:
-        score += 0.40
+        score += 0.45
     elif action_partial:
         score += 0.20
 
-    if reply_text:
-        score += _reply_quality(reply_text, category, resolution_hint)
+    if requires_reply and reply_text:
+        score += _reply_quality(reply_text, category, resolution_hint, ticket_text)
+    elif action_correct and not requires_reply:
+        score += 0.25
 
-    # Efficiency: full 0.15 for 1 step, 0 for max_steps steps
+    # Efficiency: full 0.10 for 1 step, 0 for max_steps steps.
+    if max_steps < 1:
+        raise ValueError("max_steps must be at least 1")
     if resolved and steps_taken <= max_steps:
-        efficiency = max(0.0, (max_steps - steps_taken) / (max_steps - 1))
-        score += 0.15 * efficiency
+        efficiency = (
+            0.10 if max_steps == 1 else max(0.0, 0.10 * (max_steps - steps_taken) / (max_steps - 1))
+        )
+        score += efficiency
 
     return round(min(1.0, score), 4)
 
 
 # ─────────────────────────── Penalty ───────────────────────────
+
 
 def loop_penalty(step_count: int, max_steps: int = 10) -> float:
     """Return a negative reward if agent is stuck in a loop."""

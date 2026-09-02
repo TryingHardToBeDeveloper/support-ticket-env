@@ -1,11 +1,10 @@
-"""Customer Support Ticket Resolution — OpenEnv Environment."""
+"""Source-checkout compatibility wrapper for the client package."""
 
-from support_ticket_env.models import SupportAction, SupportObservation, SupportState
-from support_ticket_env.client import SupportTicketEnv
+from .client_package.support_ticket_env import (
+    SupportAction,
+    SupportObservation,
+    SupportState,
+    SupportTicketEnv,
+)
 
-__all__ = [
-    "SupportAction",
-    "SupportObservation",
-    "SupportState",
-    "SupportTicketEnv",
-]
+__all__ = ["SupportAction", "SupportObservation", "SupportState", "SupportTicketEnv"]

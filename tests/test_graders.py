@@ -1,6 +1,7 @@
 """Unit tests for grader functions."""
 
 import pytest
+
 from support_ticket_env.graders import (
     grade_task1,
     grade_task2,
@@ -50,11 +51,13 @@ class TestTask3Grader:
             classified_correctly=True,
             action_correct=True,
             action_partial=False,
-            reply_text="we will process your refund billing payment",
+            reply_text="We will process your refund to the original payment method promptly.",
             category="billing",
             resolved=True,
             steps_taken=1,
             max_steps=5,
+            resolution_hint="process refund to original payment method",
+            ticket_text="I was charged twice and need a refund.",
         )
         assert score > 0.9
 
@@ -104,6 +107,45 @@ class TestTask3Grader:
             max_steps=5,
         )
         assert score <= 1.0
+
+    def test_single_step_budget_does_not_divide_by_zero(self):
+        score = grade_task3(True, True, False, None, "billing", True, 1, 1)
+        assert 0.0 <= score <= 1.0
+
+    def test_invalid_step_budget_is_rejected(self):
+        with pytest.raises(ValueError, match="max_steps"):
+            grade_task3(True, True, False, None, "billing", True, 1, 0)
+
+    def test_keyword_word_salad_gets_no_reply_credit(self):
+        without_reply = grade_task3(True, True, False, None, "billing", True, 2)
+        stuffed = grade_task3(
+            True,
+            True,
+            False,
+            "refund charge invoice payment billing refund charge invoice",
+            "billing",
+            True,
+            2,
+            resolution_hint="verify duplicate charge and issue refund",
+            ticket_text="I was charged twice",
+        )
+        assert stuffed == without_reply
+
+    def test_exact_private_rubric_copy_gets_no_reply_credit(self):
+        rubric = "verify duplicate charge and issue refund to original payment method"
+        without_reply = grade_task3(True, True, False, None, "billing", True, 2)
+        copied = grade_task3(
+            True,
+            True,
+            False,
+            rubric,
+            "billing",
+            True,
+            2,
+            resolution_hint=rubric,
+            ticket_text="I was charged twice",
+        )
+        assert copied == without_reply
 
 
 class TestLoopPenalty:

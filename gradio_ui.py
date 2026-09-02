@@ -17,14 +17,18 @@ except ImportError:
     print("gradio not installed. Run: pip install gradio")
     sys.exit(1)
 
-from support_ticket_env.server.support_environment import SupportTicketEnvironment
+from server.support_environment import SupportTicketEnvironment
 from support_ticket_env.models import SupportAction
 
-_env = SupportTicketEnvironment()
-_current_obs = None
-_history = []
-_total_reward = 0.0
-_episode_steps = 0
+def new_session():
+    """Create state owned by one browser session."""
+    return {
+        "env": SupportTicketEnvironment(),
+        "current_obs": None,
+        "history": [],
+        "total_reward": 0.0,
+        "episode_steps": 0,
+    }
 
 CUSTOM_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
@@ -546,25 +550,23 @@ def format_history_html(history):
         </div>"""
     return f"<div class='history-log'>{entries}</div>"
 
-def do_reset(task_id, seed):
-    global _current_obs, _history, _total_reward, _episode_steps
-    _history = []
-    _total_reward = 0.0
-    _episode_steps = 0
-    obs = _env.reset(task_id=int(task_id), seed=int(seed))
-    _current_obs = obs
+def do_reset(session, task_id, seed):
+    session = new_session()
+    obs = session["env"].reset(task_id=int(task_id), seed=int(seed))
+    session["current_obs"] = obs
     ticket_html = format_ticket_html(obs)
     feedback_html = format_feedback_html(obs.feedback, 0.0)
-    history_html = format_history_html(_history)
+    history_html = format_history_html(session["history"])
     stats = f"<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;'><div class='stat-card'><div class='stat-value' style='color:#3b82f6;'>0</div><div class='stat-label'>Steps</div></div><div class='stat-card'><div class='stat-value' style='color:#10b981;'>0.000</div><div class='stat-label'>Total Reward</div></div><div class='stat-card'><div class='stat-value' style='color:#8b5cf6;'>{int(task_id)}</div><div class='stat-label'>Task ID</div></div><div class='stat-card'><div class='stat-value' style='color:#f59e0b;'>OPEN</div><div class='stat-label'>Status</div></div></div>"
-    return ticket_html, feedback_html, history_html, stats, gr.update(value=False)
+    return session, ticket_html, feedback_html, history_html, stats, gr.update(value=False)
 
-def do_step(action_type, category, reply_text, reason):
-    global _current_obs, _history, _total_reward, _episode_steps
-    if _current_obs is None:
+def do_step(session, action_type, category, reply_text, reason):
+    session = session or new_session()
+    if session["current_obs"] is None:
         return (
+            session,
             "<div class='ticket-card' style='color:#ef4444;'>⚠️ Please click RESET first!</div>",
-            "", format_history_html(_history), "", gr.update(value=False)
+            "", format_history_html(session["history"]), "", gr.update(value=False)
         )
     kwargs = {"action_type": action_type}
     if action_type == "classify" and category:
@@ -575,36 +577,37 @@ def do_step(action_type, category, reply_text, reason):
         kwargs["reason"] = reason
     try:
         action = SupportAction(**kwargs)
-        obs = _env.step(action)
-        _current_obs = obs
+        obs = session["env"].step(action)
+        session["current_obs"] = obs
         reward = obs.reward or 0.0
-        _total_reward += reward
-        _episode_steps += 1
+        session["total_reward"] += reward
+        session["episode_steps"] += 1
         action_str = f"{action_type}" + (f"/{category}" if category and action_type == "classify" else "")
-        _history.append({"action": action_str, "reward": reward, "feedback": obs.feedback})
+        session["history"].append({"action": action_str, "reward": reward, "feedback": obs.feedback})
         ticket_html = format_ticket_html(obs)
         feedback_html = format_feedback_html(obs.feedback, reward)
-        history_html = format_history_html(_history)
+        history_html = format_history_html(session["history"])
         status = "DONE ✅" if obs.done else "OPEN ⏳"
         status_color = "#34d399" if obs.done else "#f59e0b"
-        stats = f"<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;'><div class='stat-card'><div class='stat-value' style='color:#3b82f6;'>{_episode_steps}</div><div class='stat-label'>Steps</div></div><div class='stat-card'><div class='stat-value' style='color:#10b981;'>{_total_reward:.3f}</div><div class='stat-label'>Total Reward</div></div><div class='stat-card'><div class='stat-value' style='color:#8b5cf6;'>{obs.task_id}</div><div class='stat-label'>Task ID</div></div><div class='stat-card'><div class='stat-value' style='color:{status_color};font-size:1rem;'>{status}</div><div class='stat-label'>Status</div></div></div>"
-        return ticket_html, feedback_html, history_html, stats, gr.update(value=obs.done)
+        stats = f"<div style='display:grid;grid-template-columns:repeat(4,1fr);gap:10px;'><div class='stat-card'><div class='stat-value' style='color:#3b82f6;'>{session['episode_steps']}</div><div class='stat-label'>Steps</div></div><div class='stat-card'><div class='stat-value' style='color:#10b981;'>{session['total_reward']:.3f}</div><div class='stat-label'>Total Reward</div></div><div class='stat-card'><div class='stat-value' style='color:#8b5cf6;'>{obs.task_id}</div><div class='stat-label'>Task ID</div></div><div class='stat-card'><div class='stat-value' style='color:{status_color};font-size:1rem;'>{status}</div><div class='stat-label'>Status</div></div></div>"
+        return session, ticket_html, feedback_html, history_html, stats, gr.update(value=obs.done)
     except Exception as e:
         return (
-            format_ticket_html(_current_obs),
+            session,
+            format_ticket_html(session["current_obs"]),
             f"<div style='color:#ef4444;padding:10px;background:rgba(239,68,68,0.1);border-radius:8px;font-family:\"JetBrains Mono\",monospace;font-size:0.8rem;'>❌ Error: {str(e)}</div>",
-            format_history_html(_history), "", gr.update(value=False)
+            format_history_html(session["history"]), "", gr.update(value=False)
         )
 
-def do_state():
-    state = _env.state
+def do_state(session):
+    if not session or session["current_obs"] is None:
+        return json.dumps({"status": "No active episode"}, indent=2)
+    state = session["env"].state
     return json.dumps({
         "episode_id": state.episode_id,
         "step_count": state.step_count,
         "task_id": state.task_id,
         "ticket_id": state.ticket_id,
-        "correct_category": state.correct_category,
-        "correct_action": state.correct_action,
         "classified": state.classified,
         "resolved": state.resolved,
         "total_reward": state.total_reward,
@@ -612,8 +615,11 @@ def do_state():
         "tickets_total": state.tickets_total,
     }, indent=2)
 
-with gr.Blocks(css=CUSTOM_CSS, title="Support Ticket Environment") as demo:
+with gr.Blocks(title="Support Ticket Environment") as demo:
 
+    session_state = gr.State(value=None)
+
+    gr.HTML("<style>" + CUSTOM_CSS + "</style>")
     gr.HTML(HEADER_HTML)
 
     with gr.Row():
@@ -701,17 +707,17 @@ with gr.Blocks(css=CUSTOM_CSS, title="Support Ticket Environment") as demo:
 
     reset_btn.click(
         do_reset,
-        inputs=[task_radio, seed_input],
-        outputs=[ticket_display, feedback_display, history_display, stats_display, done_check],
+        inputs=[session_state, task_radio, seed_input],
+        outputs=[session_state, ticket_display, feedback_display, history_display, stats_display, done_check],
     )
     step_btn.click(
         do_step,
-        inputs=[action_radio, category_radio, reply_input, reason_input],
-        outputs=[ticket_display, feedback_display, history_display, stats_display, done_check],
+        inputs=[session_state, action_radio, category_radio, reply_input, reason_input],
+        outputs=[session_state, ticket_display, feedback_display, history_display, stats_display, done_check],
     )
     state_btn.click(
         do_state,
-        inputs=[],
+        inputs=[session_state],
         outputs=[state_display],
     )
 

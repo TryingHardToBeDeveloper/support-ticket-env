@@ -1,4 +1,5 @@
-from support_ticket_env.server.support_environment import SupportTicketEnvironment
-from support_ticket_env.server.app import app
+"""Server-side environment implementation (excluded from the client wheel)."""
 
-__all__ = ["SupportTicketEnvironment", "app"]
+from server.support_environment import SupportTicketEnvironment
+
+__all__ = ["SupportTicketEnvironment"]
