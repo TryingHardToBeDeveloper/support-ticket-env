@@ -14,13 +14,13 @@ import random
 
 from openenv.core.env_server.interfaces import Environment
 
-from server.ticket_bank import load_ticket_bank
-from support_ticket_env.graders import (
+from graders import (
     grade_task1,
     grade_task2,
     grade_task3,
     loop_penalty,
 )
+from server.ticket_bank import load_ticket_bank
 from support_ticket_env.models import SupportAction, SupportObservation, SupportState
 
 
