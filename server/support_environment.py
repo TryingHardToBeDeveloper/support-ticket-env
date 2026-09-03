@@ -78,7 +78,9 @@ class SupportTicketEnvironment(Environment):
     ) -> SupportObservation:
         seed_salt = os.getenv("SUPPORT_ENV_SEED_SALT", "")
         effective_seed = f"{seed}:{seed_salt}" if seed_salt else seed
-        rng = random.Random(effective_seed)
+        # Deterministic sampling is part of the evaluation protocol; this PRNG
+        # never generates credentials or other cryptographic material.
+        rng = random.Random(effective_seed)  # nosec B311
         self._episode_id = episode_id
         self._task_id = int(task_id)
         if self._task_id not in (1, 2, 3):

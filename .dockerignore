@@ -1,0 +1,14 @@
+.git
+.github
+.agent
+.gradio
+.venv
+__pycache__
+*.egg-info
+*.ipynb
+*.pyc
+.env
+.env.*
+build
+dist
+tests
