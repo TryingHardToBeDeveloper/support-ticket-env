@@ -1,5 +1,5 @@
 # ── Dockerfile: Customer Support Ticket Resolution Environment ──
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY server/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 COPY --from=builder /usr/local /usr/local
 
