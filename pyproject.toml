@@ -47,6 +47,9 @@ exclude = ["*.ipynb", "openenv_stub"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["client_package", "graders", "server", "support_ticket_env"]
+
 [tool.ruff.lint.per-file-ignores]
 "server/ticket_bank.py" = ["E501"]
 
